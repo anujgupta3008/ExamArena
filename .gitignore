@@ -81,3 +81,4 @@ parsed_*_questions.txt
 EXAM_ARCHITECT_GUIDE.md
 implementation_plan.md
 
+.aws-sam/

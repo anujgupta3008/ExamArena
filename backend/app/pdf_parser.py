@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 import json
 
-DATA_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / "data"
+DATA_DIR = Path("/tmp")
 SLICES_DIR = DATA_DIR / "slices"
 
 # Create directories if they don't exist

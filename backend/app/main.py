@@ -5,6 +5,9 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, Depends, HTTPException, status, Request
+from mangum import Mangum
+# pyrefly: ignore [missing-import]
+from fastapi.responses import RedirectResponse
 # pyrefly: ignore [missing-import]
 from fastapi.middleware.cors import CORSMiddleware
 # pyrefly: ignore [missing-import]
@@ -48,10 +51,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Static file serving for question diagram image slices ────────────────────
-_SLICES_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / "data" / "slices"
-_SLICES_DIR.mkdir(parents=True, exist_ok=True)
-app.mount("/slices", StaticFiles(directory=str(_SLICES_DIR)), name="slices")
+# ── Dynamic routing for question diagram image slices from S3 ─────────────────
+@app.get("/slices/{rest_of_path:path}")
+def redirect_to_s3(rest_of_path: str):
+    s3_bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
+    aws_region = os.getenv("AWS_REGION", "ap-south-1")
+    return RedirectResponse(f"https://{s3_bucket}.s3.{aws_region}.amazonaws.com/slices/{rest_of_path}")
 
 @app.get("/health")
 def health_check():
@@ -440,7 +445,7 @@ from .pdf_parser import PDFParser, IngestSimulator
 from .ai_tagger import AITagger
 from .ingestion import ingest_question, recompute_topic_stats
 
-STAGED_DIR = Path(os.path.dirname(os.path.dirname(__file__))) / "data" / "staged"
+STAGED_DIR = Path("/tmp/staged")
 STAGED_DIR.mkdir(parents=True, exist_ok=True)
 
 class PaperCreate(BaseModel):
@@ -935,3 +940,6 @@ Format using markdown. Be encouraging and clear. Keep total response under 400 w
             "tips": ["Review the textbook chapter for this topic", "Practice similar problems from past papers"],
             "xp_earned": 0
         }
+
+# AWS Lambda Handler
+handler = Mangum(app)
