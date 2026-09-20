@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { BrainCircuit, AlertCircle, SaveAll, CheckCircle, RefreshCw, Trash2, BookOpen } from 'lucide-react';
 import QuestionCard, { checkNatCorrectness } from '../components/QuestionCard';
-import WeaknessChatbot from '../components/WeaknessChatbot';
+import StudyAdvisorChat from '../components/StudyAdvisorChat';
+import Confetti from '../components/Confetti';
 
 import { API_BASE } from '../config';
 
@@ -482,15 +483,10 @@ export default function MockExam({ addToast }) {
         </div>
       </div>
       
-      <WeaknessChatbot 
+      <StudyAdvisorChat 
         isOpen={mentorChatOpen} 
         onClose={() => setMentorChatOpen(false)} 
-        question={mentorQuestion} 
-        onXpEarned={(xp) => {
-          if (addToast) {
-            addToast(`Earned +${xp} XP from AI Syllabus Mentor!`, 'success');
-          }
-        }}
+        initialContext={mentorQuestion ? `Please explain this question step by step: \n\n${mentorQuestion.question_text}` : null} 
       />
     </div>
   );

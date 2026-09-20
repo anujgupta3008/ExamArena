@@ -14,6 +14,7 @@ Globals:
         SECRET_KEY: '{{resolve:ssm:/exam-arena/jwt-secret}}'
         COGNITO_USER_POOL_ID: '{{resolve:ssm:/exam-arena/cognito-pool-id}}'
         COGNITO_APP_CLIENT_ID: '{{resolve:ssm:/exam-arena/cognito-client-id}}'
+        STRANDS_AGENTS: 'true'
 
 Resources:
   ExamArenaApiFunction:

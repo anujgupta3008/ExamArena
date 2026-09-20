@@ -20,7 +20,7 @@ import { useAuth } from '../context/AuthContext';
 import QuestionCard from '../components/QuestionCard';
 import StatCard from '../components/StatCard';
 import GapRadar from '../components/GapRadar';
-import WeaknessChatbot from '../components/WeaknessChatbot';
+import StudyAdvisorChat from '../components/StudyAdvisorChat';
 import Confetti from '../components/Confetti';
 import { API_BASE } from '../config';
 
@@ -2302,16 +2302,11 @@ export default function Dashboard({ addToast }) {
         </div>
       )}
 
-      {/* AI Mentor Chatbot */}
-      <WeaknessChatbot 
+      {/* AI Study Advisor Agent */}
+      <StudyAdvisorChat 
         isOpen={mentorChatOpen} 
         onClose={() => setMentorChatOpen(false)} 
-        question={mentorQuestion} 
-        onXpEarned={(xp) => {
-          if (addToast) {
-            addToast(`Earned +${xp} XP from AI Syllabus Mentor!`, 'success');
-          }
-        }}
+        initialContext={mentorQuestion ? `Please explain this question step by step: \n\n${mentorQuestion.question_text}` : null} 
       />
 
       {/* Confetti & Study Completion Celebration Modal */}

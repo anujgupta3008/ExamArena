@@ -995,5 +995,24 @@ Format using markdown. Be encouraging and clear. Keep total response under 400 w
             "xp_earned": 0
         }
 
+# --- AI Study Advisor Agent (Antigravity SDK) ---
+class AgentChatRequest(BaseModel):
+    message: str
+    exam_id: int
+    user_id: int
+
+@app.post("/api/agent/chat", response_model=Dict[str, Any])
+async def ai_agent_chat(req: AgentChatRequest):
+    """
+    Chats with the AI Study Advisor Agent (powered by Antigravity SDK).
+    """
+    from .study_agent import chat_with_advisor
+    try:
+        response_text = await chat_with_advisor(req.message, req.user_id, req.exam_id)
+        return {"response": response_text}
+    except Exception as e:
+        print(f"Agent error: {e}")
+        return {"response": f"Sorry, the advisor encountered an error: {str(e)}"}
+
 # AWS Lambda Handler
 handler = Mangum(app)
