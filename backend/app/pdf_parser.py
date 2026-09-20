@@ -68,13 +68,26 @@ class PDFParser:
                 
                 # Render the image slice
                 pix = page.get_pixmap(clip=rect, dpi=150)
-                image_path = paper_slices_dir / f"q_{q['q_num']}.png"
-                pix.save(str(image_path))
+                image_bytes = pix.tobytes("png")
+                s3_key = f"slices/{paper_id}/q_{q['q_num']}.png"
+                
+                try:
+                    import boto3
+                    s3 = boto3.client('s3')
+                    bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
+                    s3.put_object(
+                        Bucket=bucket,
+                        Key=s3_key,
+                        Body=image_bytes,
+                        ContentType="image/png"
+                    )
+                except Exception as e:
+                    print(f"Failed to upload slice {s3_key} to S3: {e}")
 
                 results.append({
                     "paper_id": paper_id,
                     "question_number": q["q_num"],
-                    "image_path": str(image_path),
+                    "image_path": s3_key,
                     "page_number": page_num + 1
                 })
         
@@ -89,20 +102,25 @@ class IngestSimulator:
     @staticmethod
     def generate_mock_questions(paper_id: int, count: int = 5) -> List[Dict]:
         mock_data = []
-        paper_slices_dir = SLICES_DIR / str(paper_id)
-        paper_slices_dir.mkdir(parents=True, exist_ok=True)
-
         for i in range(1, count + 1):
-            # Create a dummy blank image for the simulator
-            image_path = paper_slices_dir / f"simulated_q_{i}.png"
-            # Just create an empty file to represent the image
-            with open(image_path, "wb") as f:
-                f.write(b"")
+            s3_key = f"slices/{paper_id}/simulated_q_{i}.png"
+            try:
+                import boto3
+                s3 = boto3.client('s3')
+                bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=s3_key,
+                    Body=b"",
+                    ContentType="image/png"
+                )
+            except:
+                pass
 
             mock_data.append({
                 "paper_id": paper_id,
                 "question_number": i,
-                "image_path": str(image_path),
+                "image_path": s3_key,
                 "is_simulated": True
             })
         return mock_data

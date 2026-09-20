@@ -552,21 +552,39 @@ def parse_and_stage_paper(paper_id: int, db: Session = Depends(get_db)):
         tagged_metadata["image_path"] = slice_info["image_path"]
         staged_questions.append(tagged_metadata)
 
-    # Save to staging JSON
-    staged_file = STAGED_DIR / f"{paper.id}.json"
-    with open(staged_file, "w") as f:
-        json.dump(staged_questions, f, indent=2)
+    # Save to staging JSON in S3
+    s3 = boto3.client('s3')
+    bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
+    s3_key = f"staged/{paper.id}.json"
+    try:
+        s3.put_object(
+            Bucket=bucket,
+            Key=s3_key,
+            Body=json.dumps(staged_questions, indent=2).encode('utf-8'),
+            ContentType="application/json"
+        )
+    except Exception as e:
+        print(f"Failed to upload staging file to S3: {e}")
+        staged_file = STAGED_DIR / f"{paper.id}.json"
+        with open(staged_file, "w") as f:
+            json.dump(staged_questions, f, indent=2)
 
     return {"status": "staged", "question_count": len(staged_questions)}
 
 @app.get("/api/papers/{paper_id}/staged", response_model=List[Dict[str, Any]])
 def get_staged_questions(paper_id: int):
-    staged_file = STAGED_DIR / f"{paper_id}.json"
-    if not staged_file.exists():
-        # Return empty list or generate on-the-fly simulator questions for convenience
-        return []
-    with open(staged_file, "r") as f:
-        return json.load(f)
+    s3 = boto3.client('s3')
+    bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
+    s3_key = f"staged/{paper_id}.json"
+    try:
+        response = s3.get_object(Bucket=bucket, Key=s3_key)
+        return json.loads(response['Body'].read().decode('utf-8'))
+    except Exception:
+        staged_file = STAGED_DIR / f"{paper_id}.json"
+        if not staged_file.exists():
+            return []
+        with open(staged_file, "r") as f:
+            return json.load(f)
 
 @app.post("/api/papers/{paper_id}/staged/approve", response_model=Dict[str, Any])
 def approve_staged_questions(paper_id: int, approval_data: ApprovalList, db: Session = Depends(get_db)):
