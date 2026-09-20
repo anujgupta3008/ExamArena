@@ -26,6 +26,7 @@ Resources:
       Architectures:
         - x86_64
       Policies:
+        - AWSLambdaBasicExecutionRole
         - Statement:
             - Effect: Allow
               Action:
@@ -42,14 +43,50 @@ Resources:
               Resource:
                 - arn:aws:s3:::exam-arena-assets-ag
                 - arn:aws:s3:::exam-arena-assets-ag/*
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource: !GetAtt PdfProcessingQueue.Arn
       Events:
         ApiEvent:
           Type: Api
           Properties:
             Path: /{proxy+}
             Method: ANY
+
+  PdfProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: exam-arena-pdf-processing
+      VisibilityTimeout: 300
+
+  PdfProcessorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: app.pdf_processor_handler.handler
+      Runtime: python3.12
+      Architectures:
+        - x86_64
+      Timeout: 300
+      MemorySize: 1024
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PdfProcessingQueue.Arn
+            BatchSize: 1
       Policies:
         - AWSLambdaBasicExecutionRole
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:PutObject
+                - s3:ListBucket
+              Resource:
+                - arn:aws:s3:::exam-arena-assets-ag
+                - arn:aws:s3:::exam-arena-assets-ag/*
 
 Outputs:
   ApiUrl:

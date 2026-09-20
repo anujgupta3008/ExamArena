@@ -529,31 +529,74 @@ def create_paper(paper_data: PaperCreate, db: Session = Depends(get_db)):
     db.refresh(paper)
     return {"status": "created", "paper_id": paper.id}
 
+from fastapi import UploadFile, File, Form
+import uuid
+
+@app.post("/api/papers/upload-pdf", response_model=Dict[str, Any])
+async def upload_pdf_for_processing(
+    exam_id: int = Form(...),
+    year: int = Form(...),
+    session: int = Form(...),
+    total_marks: int = Form(...),
+    total_questions: int = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    paper = Paper(
+        exam_id=exam_id,
+        year=year,
+        session=session,
+        total_marks=total_marks,
+        total_questions=total_questions,
+        is_processed=False
+    )
+    db.add(paper)
+    db.commit()
+    db.refresh(paper)
+
+    s3 = boto3.client('s3', region_name='ap-south-1')
+    bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
+    s3_key = f"raw-pdfs/{paper.id}-{uuid.uuid4().hex[:8]}.pdf"
+    
+    s3.upload_fileobj(file.file, bucket, s3_key)
+    
+    paper.pdf_path = s3_key
+    db.commit()
+
+    sqs = boto3.client('sqs', region_name='ap-south-1')
+    
+    try:
+        # Resolve queue url
+        queue_url = sqs.get_queue_url(QueueName="exam-arena-pdf-processing")['QueueUrl']
+        sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=json.dumps({
+                "paper_id": paper.id,
+                "s3_key": s3_key
+            })
+        )
+    except Exception as e:
+        print(f"Failed to send SQS message: {e}")
+
+    return {"status": "processing", "paper_id": paper.id}
+
 @app.post("/api/papers/{paper_id}/parse", response_model=Dict[str, Any])
 def parse_and_stage_paper(paper_id: int, db: Session = Depends(get_db)):
     paper = db.query(Paper).filter_by(id=paper_id).first()
     if not paper:
         raise HTTPException(status_code=404, detail="Paper not found")
 
-    # If PDF file path exists on paper object, try to parse it, else run simulator
-    parser = PDFParser()
+    # This is the synchronous mock fallback if SQS is not used
     tagger = AITagger()
-
-    if paper.pdf_path and os.path.exists(paper.pdf_path):
-        slices = parser.parse_pdf(paper.pdf_path, paper.id)
-    else:
-        # Generate simulator mock slices
-        slices = IngestSimulator.generate_mock_questions(paper.id, count=5)
+    slices = IngestSimulator.generate_mock_questions(paper.id, count=5)
 
     staged_questions = []
     for slice_info in slices:
-        # Call AI tagger to analyze visual crop or simulated fallback
         tagged_metadata = tagger.tag_question_image(slice_info["image_path"])
         tagged_metadata["image_path"] = slice_info["image_path"]
         staged_questions.append(tagged_metadata)
 
-    # Save to staging JSON in S3
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', region_name='ap-south-1')
     bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
     s3_key = f"staged/{paper.id}.json"
     try:
@@ -565,15 +608,12 @@ def parse_and_stage_paper(paper_id: int, db: Session = Depends(get_db)):
         )
     except Exception as e:
         print(f"Failed to upload staging file to S3: {e}")
-        staged_file = STAGED_DIR / f"{paper.id}.json"
-        with open(staged_file, "w") as f:
-            json.dump(staged_questions, f, indent=2)
 
     return {"status": "staged", "question_count": len(staged_questions)}
 
 @app.get("/api/papers/{paper_id}/staged", response_model=List[Dict[str, Any]])
 def get_staged_questions(paper_id: int):
-    s3 = boto3.client('s3')
+    s3 = boto3.client('s3', region_name='ap-south-1')
     bucket = os.getenv("S3_BUCKET_NAME", "exam-arena-assets-ag")
     s3_key = f"staged/{paper_id}.json"
     try:
