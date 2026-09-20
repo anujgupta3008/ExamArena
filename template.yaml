@@ -12,6 +12,8 @@ Globals:
         GEMINI_API_KEY: '{{resolve:ssm:/exam-arena/gemini-api-key}}'
         S3_BUCKET_NAME: exam-arena-assets-ag
         SECRET_KEY: '{{resolve:ssm:/exam-arena/jwt-secret}}'
+        COGNITO_USER_POOL_ID: '{{resolve:ssm:/exam-arena/cognito-pool-id}}'
+        COGNITO_APP_CLIENT_ID: '{{resolve:ssm:/exam-arena/cognito-client-id}}'
 
 Resources:
   ExamArenaApiFunction:
@@ -22,6 +24,14 @@ Resources:
       Runtime: python3.12
       Architectures:
         - x86_64
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cognito-idp:SignUp
+                - cognito-idp:AdminConfirmSignUp
+                - cognito-idp:InitiateAuth
+              Resource: "*"
       Events:
         ApiEvent:
           Type: Api
