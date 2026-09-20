@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -171,7 +172,7 @@ function QuestionFeedback({ questionId }) {
   );
 }
 
-export default function Dashboard({ addToast }) {
+export default function Dashboard({}) {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser, token } = useAuth();
@@ -308,7 +309,7 @@ export default function Dashboard({ addToast }) {
           })
           .catch(err => {
             console.error('[Dashboard] loadExamData:', err.message);
-            addToast?.('Failed to load exam data.', 'error');
+            toast.error('Failed to load exam data.');
             setLoading(false);
           });
       });
@@ -335,7 +336,7 @@ export default function Dashboard({ addToast }) {
       .then(data => setQuestions(data))
       .catch(err => {
         console.error('[Dashboard] fetchQuestionsList:', err.message);
-        addToast?.('Failed to load questions.', 'error');
+        toast.error('Failed to load questions.');
       });
   }, [id, selectedPaper, questionSubjectFilter, questionSearch]);
 
@@ -395,7 +396,7 @@ export default function Dashboard({ addToast }) {
 
   const handleUpdateStudyPlan = async () => {
     if (!currentUser) {
-      addToast?.('Please login to generate custom study plans.', 'error');
+      toast.error('Please login to generate custom study plans.');
       return;
     }
     try {
@@ -433,7 +434,7 @@ export default function Dashboard({ addToast }) {
       setStudyPlan(data);
     } catch (err) {
       console.error('[Dashboard] handleUpdateStudyPlan:', err.message);
-      addToast?.(err.message || 'Failed to generate study plan.', 'error');
+      toast.error(err.message || 'Failed to generate study plan.');
     }
   };
 
@@ -456,8 +457,8 @@ export default function Dashboard({ addToast }) {
 
       if (totalTasks > 0 && completedCount === totalTasks) {
         setShowCompletionModal(true);
-        if (addToast) {
-          addToast("🎉 Congratulations! GATE CS study plan successfully mastered! +5000 XP", "success");
+        {
+          toast.success("🎉 Congratulations! GATE CS study plan successfully mastered! +5000 XP");
         }
         // Save XP to local profile
         const prevXp = parseInt(localStorage.getItem('user_xp') || '0');
@@ -2150,11 +2151,7 @@ export default function Dashboard({ addToast }) {
                               key={tIdx} 
                               onClick={() => {
                                 if (isLocked) {
-                                  if (addToast) {
-                                    addToast("This day's tasks are locked! Complete previous day tasks first.", "warning");
-                                  } else {
-                                    alert("This day's tasks are locked! Complete previous day tasks first.");
-                                  }
+                                  toast("This day's tasks are locked! Complete previous day tasks first.", { icon: "⚠️" });
                                   return;
                                 }
                                 handleToggleTask(taskKey);
@@ -2409,8 +2406,8 @@ export default function Dashboard({ addToast }) {
                   <button 
                     onClick={() => {
                       setShowCompletionModal(false);
-                      if (addToast) {
-                        addToast("Certificate claimed! 5000 XP credited to your local profile.", "success");
+                      {
+                        toast.success("Certificate claimed! 5000 XP credited to your local profile.");
                       }
                     }}
                     className="bg-white/5 hover:bg-white/10 text-white border border-white/10 font-bold text-xs py-3 px-6 rounded-xl transition-colors cursor-pointer"

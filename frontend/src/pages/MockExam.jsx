@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { BrainCircuit, AlertCircle, SaveAll, CheckCircle, RefreshCw, Trash2, BookOpen } from 'lucide-react';
@@ -7,7 +8,7 @@ import Confetti from '../components/Confetti';
 
 import { API_BASE } from '../config';
 
-export default function MockExam({ addToast }) {
+export default function MockExam({}) {
   const { currentUser, token } = useAuth();
   const [exams, setExams] = useState([]);
   const [selectedExamId, setSelectedExamId] = useState('');
@@ -51,7 +52,7 @@ export default function MockExam({ addToast }) {
       .catch(err => {
         if (err.name === 'AbortError') return;
         console.error('[MockExam] fetchExams:', err.message);
-        addToast?.('Failed to load exams.', 'error');
+        toast.error('Failed to load exams.');
       });
     return () => examsFetchRef.current?.abort();
   }, [addToast]);
@@ -68,7 +69,7 @@ export default function MockExam({ addToast }) {
       setSavedExams(data);
     } catch (err) {
       console.error('[MockExam] fetchSavedExams:', err.message);
-      addToast?.('Failed to load saved exams.', 'error');
+      toast.error('Failed to load saved exams.');
     } finally {
       setLoadingSaved(false);
     }
@@ -119,7 +120,7 @@ export default function MockExam({ addToast }) {
       });
     } catch (err) {
       console.error('[MockExam] handleGenerate:', err.message);
-      addToast?.(err.message || 'Failed to generate mock exam.', 'error');
+      toast.error(err.message || 'Failed to generate mock exam.');
     } finally {
       setLoading(false);
     }
@@ -157,7 +158,7 @@ export default function MockExam({ addToast }) {
       window.scrollTo({ top: 400, behavior: 'smooth' });
     } catch (err) {
       console.error('[MockExam] handleLoadSavedExam:', err.message);
-      addToast?.(err.message || 'Failed to load saved exam.', 'error');
+      toast.error(err.message || 'Failed to load saved exam.');
     } finally {
       setLoading(false);
     }
@@ -179,7 +180,7 @@ export default function MockExam({ addToast }) {
       if (mockExam && mockExam.id === examId) setMockExam(null);
     } catch (err) {
       console.error('[MockExam] handleDeleteSavedExam:', err.message);
-      addToast?.(err.message || 'Failed to delete exam.', 'error');
+      toast.error(err.message || 'Failed to delete exam.');
     }
   };
 
@@ -290,7 +291,7 @@ export default function MockExam({ addToast }) {
     } catch (err) {
       console.error('[MockExam] handleSave:', err.message);
       setSaveStatus('error');
-      addToast?.(err.message || 'Failed to save exam.', 'error');
+      toast.error(err.message || 'Failed to save exam.');
     }
   };
 

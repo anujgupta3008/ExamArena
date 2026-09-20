@@ -1,10 +1,11 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect, useRef } from 'react';
 import { Check, X, BrainCircuit, RefreshCw, Database, ShieldAlert, Activity, MessageSquare, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import { API_BASE } from '../config';
 
-export default function Admin({ addToast }) {
+export default function Admin({}) {
   const { currentUser, token } = useAuth();
   const [activeTab, setActiveTab] = useState('pipeline');
   
@@ -46,7 +47,7 @@ export default function Admin({ addToast }) {
       .catch(err => {
         if (err.name === 'AbortError') return;
         console.error('[Admin] fetchExams:', err.message);
-        addToast?.('Failed to load exams.', 'error');
+        toast.error('Failed to load exams.');
       });
     return () => examsFetchRef.current?.abort();
   }, [addToast]);
@@ -70,7 +71,7 @@ export default function Admin({ addToast }) {
       .catch(err => {
         if (err.name === 'AbortError') return;
         console.error('[Admin] fetchPapers:', err.message);
-        addToast?.('Failed to load papers.', 'error');
+        toast.error('Failed to load papers.');
       });
 
     fetch(`${API_BASE}/api/exams/${selectedExamId}/topics`, { signal: sig })
@@ -132,7 +133,7 @@ export default function Admin({ addToast }) {
         console.error('[Admin] fetchQuestions:', err.message);
         setQuestions([]);
         setLoading(false);
-        addToast?.('Failed to load questions.', 'error');
+        toast.error('Failed to load questions.');
       });
 
     return () => paperQRef.current?.abort();
@@ -167,7 +168,7 @@ export default function Admin({ addToast }) {
       .catch(err => {
         if (err.name === 'AbortError') return;
         console.error(`[Admin] fetch${endpoint}:`, err.message);
-        addToast?.(`Failed to load ${endpoint}.`, 'error');
+        toast.error(`Failed to load ${endpoint}.`);
       });
 
     return () => adminDataRef.current?.abort();
@@ -195,7 +196,7 @@ export default function Admin({ addToast }) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload.detail || 'Failed to reset password');
       }
-      addToast?.('Password reset successful!', 'success');
+      toast.success('Password reset successful!');
       // Force a page reload to update currentUser context
       window.location.reload();
     } catch (err) {
@@ -237,19 +238,19 @@ export default function Admin({ addToast }) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(payload.detail || `Server error: ${res.status}`);
       }
-      addToast?.('Question approved!', 'success');
+      toast.success('Question approved!');
       if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
-      else addToast?.('All questions reviewed!', 'success');
+      else toast.success('All questions reviewed!');
     } catch (err) {
       console.error('[Admin] handleApprove:', err.message);
-      addToast?.(`Failed: ${err.message}`, 'error');
+      toast.error(`Failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleReject = () => {
-    if (addToast) addToast(`Question skipped`, 'info');
+    toast(`Question skipped`);
     if (currentIndex < questions.length - 1) setCurrentIndex(currentIndex + 1);
   };
 

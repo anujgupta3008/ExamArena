@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 import React, { useState, useEffect } from 'react';
 import { Settings, Check, X, ChevronRight, Upload, BrainCircuit, RefreshCw, Database, FileText } from 'lucide-react';
 
@@ -129,34 +130,34 @@ export default function AdminPanel({ onNavigate, apiBaseUrl, addToast }) {
       })
       .then(data => {
         setLoading(false);
-        if (addToast) addToast(`Question ${editedData.question_number || currentIndex + 1} approved & ingested!`, 'success');
+        toast.success(`Question ${editedData.question_number || currentIndex + 1} approved & ingested!`);
         
         if (currentIndex < questions.length - 1) {
           setCurrentIndex(currentIndex + 1);
         } else {
-          if (addToast) addToast('All questions reviewed!', 'success');
+          toast.success('All questions reviewed!');
         }
       })
       .catch(err => {
         setLoading(false);
         console.error(err);
-        if (addToast) addToast(`Failed to approve question: ${err.message}`, 'error');
+        toast.error(`Failed to approve question: ${err.message}`);
       });
   };
 
   const handleReject = () => {
-    if (addToast) addToast(`Question ${editedData.question_number || currentIndex + 1} skipped`, 'info');
+    toast(`Question ${editedData.question_number || currentIndex + 1} skipped`);
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      if (addToast) addToast('All questions reviewed!', 'success');
+      toast.success('All questions reviewed!');
     }
   };
 
   const handleRetag = () => {
     if (!selectedPaperId || retagging) return;
     setRetagging(true);
-    if (addToast) addToast('Re-tagging question with AI...', 'info');
+    toast('Re-tagging question with AI...');
     
     fetch(`${apiBaseUrl}/api/papers/${selectedPaperId}/parse`, { method: 'POST' })
       .then(res => {
@@ -165,21 +166,21 @@ export default function AdminPanel({ onNavigate, apiBaseUrl, addToast }) {
       })
       .then(data => {
         setRetagging(false);
-        if (addToast) addToast(`AI re-tagging complete: ${data.question_count} questions processed`, 'success');
+        toast.success(`AI re-tagging complete: ${data.question_count} questions processed`);
         // Refresh staged questions
         setSelectedPaperId(prev => prev); // trigger re-fetch
       })
       .catch(err => {
         setRetagging(false);
         console.error(err);
-        if (addToast) addToast(`Re-tagging failed: ${err.message}`, 'error');
+        toast.error(`Re-tagging failed: ${err.message}`);
       });
   };
 
   const handleRegeneratePredictions = () => {
     if (!selectedExamId || regenerating) return;
     setRegenerating(true);
-    if (addToast) addToast('Generating AI predictions...', 'info');
+    toast('Generating AI predictions...');
 
     fetch(`${apiBaseUrl}/api/exams/${selectedExamId}/predictions/generate`, { method: 'POST' })
       .then(res => {
@@ -188,12 +189,12 @@ export default function AdminPanel({ onNavigate, apiBaseUrl, addToast }) {
       })
       .then(data => {
         setRegenerating(false);
-        if (addToast) addToast(`Successfully generated ${data.predictions_count} predictions!`, 'success');
+        toast.success(`Successfully generated ${data.predictions_count} predictions!`);
       })
       .catch(err => {
         setRegenerating(false);
         console.error(err);
-        if (addToast) addToast(`Failed to generate predictions: ${err.message}`, 'error');
+        toast.error(`Failed to generate predictions: ${err.message}`);
       });
   };
 

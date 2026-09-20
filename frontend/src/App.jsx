@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 import Navbar from './components/Shared/Navbar';
 import LandingNavbar from './components/Shared/LandingNavbar';
-import ToastContainer from './components/Shared/ToastContainer';
 import ProtectedRoute from './components/Shared/ProtectedRoute';
 
 import Home from './pages/Home';
@@ -15,36 +15,27 @@ import MockExam from './pages/MockExam';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 
 export default function App() {
-  const [toasts, setToasts] = useState([]);
   const location = useLocation();
-  
-  const addToast = useCallback((message, type = 'info') => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-  }, []);
-  
-  const dismissToast = useCallback((id) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  }, []);
 
   return (
     <div className="min-h-screen flex flex-col text-slate-100 font-body relative overflow-x-hidden bg-[#0a0b10]">
+      <Toaster position="top-right" toastOptions={{
+        className: '!bg-slate-800 !text-slate-100 !border !border-slate-700 !shadow-xl',
+      }} />
       {['/', '/privacy'].includes(location.pathname) ? <LandingNavbar /> : <Navbar />}
-      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
       
       <main className="flex-grow pb-20">
         <Routes>
-          <Route path="/" element={<Home addToast={addToast} />} />
+          <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/mock-exam" element={<MockExam addToast={addToast} />} />
+          <Route path="/mock-exam" element={<MockExam />} />
           
-          <Route path="/exam/:id" element={<Dashboard addToast={addToast} />} />
+          <Route path="/exam/:id" element={<Dashboard />} />
           
           {/* Protected Routes */}
           <Route element={<ProtectedRoute adminOnly={true} />}>
-            <Route path="/internal-admin" element={<Admin addToast={addToast} />} />
+            <Route path="/internal-admin" element={<Admin />} />
           </Route>
           
           <Route path="/privacy" element={<PrivacyPolicy />} />

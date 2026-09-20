@@ -1,3 +1,4 @@
+import toast from 'react-hot-toast';
 /**
  * ============================================================
  *  Exam Arena — Page Template
@@ -34,7 +35,7 @@ import { useAuth }  from '../context/AuthContext';
  * @param {Function} addToast  – global toast dispatcher from App.jsx
  *                              signature: (message: string, type: 'success'|'error'|'info') => void
  */
-export default function PageTemplate({ addToast }) {
+export default function PageTemplate({}) {
   // ── Auth ────────────────────────────────────────────────
   const { token, currentUser } = useAuth();
   const navigate = useNavigate();
@@ -85,7 +86,7 @@ export default function PageTemplate({ addToast }) {
 
       setError(err.message);
       // ✅ Surface errors to the user via the global toast
-      addToast?.(err.message || 'Something went wrong.', 'error');
+      toast.error(err.message || 'Something went wrong.');
     } finally {
       setLoading(false);
     }
@@ -124,11 +125,11 @@ export default function PageTemplate({ addToast }) {
       }
 
       const result = await res.json();
-      addToast?.('Saved successfully!', 'success');
+      toast.success('Saved successfully!');
       return result;
     } catch (err) {
       console.error('[PageTemplate] handleSubmit failed:', err.message);
-      addToast?.(err.message || 'Could not save.', 'error');
+      toast.error(err.message || 'Could not save.');
     }
   }, [token, addToast]);
 
@@ -190,5 +191,5 @@ export default function PageTemplate({ addToast }) {
 // ── PropTypes ─────────────────────────────────────────────
 // Uncomment and update when prop-types is available in the project
 // PageTemplate.propTypes = {
-//   addToast: PropTypes.func,
+//   toast: PropTypes.func,
 // };
