@@ -1,7 +1,11 @@
 import os
 import json
 import random
+import logging
 from pathlib import Path
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 from contextlib import asynccontextmanager
 # pyrefly: ignore [missing-import]
 from fastapi import FastAPI, Depends, HTTPException, status, Request
@@ -1053,6 +1057,25 @@ async def ai_agent_chat(req: AgentChatRequest):
     except Exception as e:
         print(f"Agent error: {e}")
         return {"response": f"Sorry, the advisor encountered an error: {str(e)}"}
+
+@app.get("/api/admin/metrics", response_model=Dict[str, Any])
+def get_metrics(db: Session = Depends(get_db)):
+    """
+    Returns basic app stats for CloudWatch monitoring and admin dashboards.
+    """
+    user_count = db.query(User).count()
+    question_count = db.query(Question).count()
+    exam_count = db.query(Exam).count()
+    paper_count = db.query(Paper).count()
+    
+    logger.info(f"Metrics requested. Users: {user_count}, Questions: {question_count}")
+    
+    return {
+        "user_count": user_count,
+        "question_count": question_count,
+        "exam_count": exam_count,
+        "paper_count": paper_count
+    }
 
 # AWS Lambda Handler
 handler = Mangum(app)
